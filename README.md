@@ -15,6 +15,8 @@ $HOME/.local/share/solid/actions/
 
 Just select "Empty Device Trash" from the list of actions available for a mounted removable device.
 
+![Empty Device Trash Usage Image](images/empty-device-trash-usage.png)
+
 This will remove all files from hidden directories:
 
 ```
