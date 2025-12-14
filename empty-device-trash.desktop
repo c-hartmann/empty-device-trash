@@ -1,0 +1,44 @@
+# Add an entry to the Devices menus in the Taskbar to empty Trash before unmounting it later.
+#
+# Installation: Copy me to: ~/.local/share/solid/actions/
+
+# TODO
+#
+# * Use "Do not ask again" option?
+#
+# * Can we disable the availability of this action, when device is not yet mounted?
+# > Seems, Plasma mounts the device automatically when we access it, so there na
+#   state 'not mounted' we would to take into account.
+#
+# * make use of %f if we have it:
+#   from: https://techbase.kde.org/Development/Tutorials/Solid/Device_Actions ...
+#   Executing actions
+#   A matching action can be selected for execution by the user. When that happens, the command line in the Exec key of the action is executed given the device as a parameter. The location and value of the parameter is specified in the following way:
+#   %f
+#       Device mount point location, if applicable
+#   %d
+#       Device special file path
+# > so this bit more omplex approach to read the mount point is *not* required:
+#   mount_point="$(command findmnt --noheadings --output TARGET $block_device)"
+
+# for some unkwon reason ls -1 <mount_point>/.Trash-* fails, although later rm <mount_point>/.Trash-*/files/ succeeds. so .Trash-1000 keeps "hard coded".  bash internal printf command comes to a rescue
+
+[Desktop Entry]
+Type=Service
+X-KDE-Action-Custom=true
+# aaaa, these Solid-Predicates drive me nuts. If someone reads this and knows an URL with a complete documentation .. please contact me: hartmann.christian@gmail.com
+# X-KDE-Solid-Predicate=[ [ [ StorageVolume.ignored == false AND StorageVolume.usage == 'FileSystem' ] AND [ StorageDrive.driveType != 'CdromDrive' AND StorageVolume.removable == true ] ]
+# X-KDE-Solid-Predicate=[ [ [ StorageVolume.ignored == false AND StorageVolume.usage == 'FileSystem' ] AND StorageVolume.removable == true ]
+X-KDE-Solid-Predicate=[ [ StorageVolume.ignored == false AND StorageVolume.usage == 'FileSystem'] OR [ IS StorageAccess AND StorageDrive.driveType == 'Disk'] ]
+# some reasonable icons and the one we use:
+# Icon=trash-empty-symbolic
+# Icon=user-trash-full-symbolic
+# Icon=user-trash-symbolic
+# Icon=user-trash-full-symbolic
+Icon=albumfolder-user-trash-symbolic
+Actions=EmptyTrash
+
+[Desktop Action EmptyTrash]
+Name=Empty Device Trash
+Icon=albumfolder-user-trash-symbolic
+Exec=bash -c 'user_id=$UID; block_device="%d"; mount_point="%f"; typeset -a udisksctl_out; udisksctl_out=($(command udisksctl info --block-device $block_device | grep 'IdLabel:')); test -n "$mount_point" || kdialog --error "$block_device appears to be not mounted" || exit 1; files_count=$(cd ${mount_point}/.Trash-${user_id}/files/; command ls -1 * | command wc -l); spacer="          "; separator="————————————————————"; test $files_count -eq 0 && kdialog --title "No File to Delete - Empty Trash" --ok-label "Dismiss" --sorry "There do not seem to be any files to delete in the Trash on: ${udisksctl_out[1]}${spacer}" && exit 1; kdialog --title "Confirm Delete Permanently - Empty Trash" --yes-label "Delete Permanently" --no-label "Cancel" --warningyesno "Delete following $files_count file(s) permanently from Trash on: ${udisksctl_out[1]}?${spacer}\n\n${separator}\n$(cd ${mount_point}/.Trash-${user_id}/files/; command ls -1)\n${separator}\n\nTHIS ACTION CANNOT BE UNDONE.\n\n"; kdialog_return_value=$?; test $kdialog_return_value -eq 0 && command rm ${mount_point}/.Trash-${user_id}/files/* && command rm ${mount_point}/.Trash-${user_id}/info/*;'
