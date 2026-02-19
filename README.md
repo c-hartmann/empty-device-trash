@@ -11,6 +11,12 @@ This file goes into:
 $HOME/.local/share/solid/actions/
 ```
 
+## KDE Store
+
+find this thing at:
+
+[Various Plasma 6 Improvements / Empty Device Trash](https://store.kde.org/p/2312114)
+
 ## Usage
 
 Just select "Empty Device Trash" from the list of actions available for a mounted removable device.
