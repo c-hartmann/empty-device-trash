@@ -12,6 +12,8 @@
 # NOTE
 # spaces in file names might cause trouble!
 
+shopt -s dotglob
+
 block_device="$1"
 mount_point="$2"
 user_id=$UID
@@ -31,14 +33,16 @@ function decode_url
 	(IFS="+"; echo -e ${path//%/\\x}"")
 }
 
+# TODO: this fails on "dotted" files, such as .directory
+#     > shopt -s dotglob
 function collect_pathes
 {
 	trash_dir="$1"
-	cd "$trash_dir"
+# 	cd "$trash_dir"
 	for if in "${trash_dir}"/info/*.trashinfo; do
 		orig_path=$(grep "^Path=" "$if")
 		orig_path=${orig_path#Path=}
-		orig_path=$(decode_url "$orig_path")
+ 		orig_path=$(decode_url "$orig_path")
  		printf "%s\n" "$orig_path"
 	done
 }
