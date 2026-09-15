@@ -63,7 +63,7 @@ udisksctl_out=($(command udisksctl info --block-device $block_device | grep "IdL
 unset udisksctl_out[0]
 block_device_label="${udisksctl_out[@]}"
 
-files_count=$(cd "${mount_point}/.Trash-${user_id}/info/"; command ls -1 | command wc -l)
+files_count=$(cd "${mount_point}/.Trash-${user_id}/info/"; command ls -1 * | command wc -l)
 #sorry_message="It seems as if there are no files or directories to delete in the Trash on: ${block_device_label}${spacer}"
 sorry_message="Can not find any files or directories to delete in the Trash on:  ${block_device_label}${spacer}"
 test $files_count -eq 0 && kdialog --title "No File(s) to Delete" --ok-label "Dismiss" --sorry "$sorry_message" 1>/dev/null 2>&1 && exit 1
