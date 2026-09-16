@@ -71,7 +71,7 @@ test $files_count -eq 0 && kdialog --title "No File(s) to Delete" --ok-label "Di
 warning_message="Delete following $files_count file(s) permanently from trash on: ${block_device_label}?${spacer}\n\n${separator}\n$(collect_pathes "${mount_point}/.Trash-${user_id}")\n${separator}\n\nTHIS ACTION CANNOT BE UNDONE.\n\n"
 kdialog --title "Confirm Delete Permanently" --yes-label "Delete Permanently" --no-label "Cancel" --warningyesno "$warning_message" 1>/dev/null 2>&1; kdialog_return_value=$?
 
-test $kdialog_return_value -eq 0 && command rm -rf "${mount_point}/.Trash-${user_id}"/files/* && command rm -rf "${mount_point}/.Trash-${user_id}"/info/*;
+# TODO: we might fail here on insufficient user rights. we shall either inform on that failure or offer to do with sudo ..
 
-# check for single quotes here:
-# ''
+test $kdialog_return_value -eq 0 && command rm -rf "${mount_point}/.Trash-${user_id}"/files/*; rm_return_value=$?; if $rm_return_value -eq 0; then command rm -rf "${mount_point}/.Trash-${user_id}"/info/*; else kdialog --error "Could not delete following files:\n\n$(ls -1d "${mount_point}/.Trash-${user_id}"/files/*)\n\n(probably due to insufficient rights)"; fi
+
