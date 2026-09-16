@@ -32,6 +32,11 @@ function decode_url
 	path="$1"
 	(IFS="+"; echo -e ${path//%/\\x}"")
 }
+function decode_url_FROM_DESKTOP_ACTION
+{
+	path="$1";
+	(IFS="+"; echo -e ${path//%/\\\\x}"");
+}
 
 # TODO: this fails on "dotted" files, such as .directory
 #     > shopt -s dotglob
@@ -48,7 +53,7 @@ function collect_pathes
 }
 
 # by definition in a KDE Solid device action, there will be no mismatch between
-# the given device' mountpount and the given mount pount, but might happen on command line
+# the given device mountpount and the given mount pount, but might happen on command line
 device_mount_point="$(findmnt --noheadings --output TARGET $block_device 2>/dev/null)"
 test "$device_mount_point" == "$mount_point"
 mount_point_check=$?
@@ -70,8 +75,17 @@ test $files_count -eq 0 && kdialog --title "No File(s) to Delete" --ok-label "Di
 
 warning_message="Delete following $files_count file(s) permanently from trash on: ${block_device_label}?${spacer}\n\n${separator}\n$(collect_pathes "${mount_point}/.Trash-${user_id}")\n${separator}\n\nTHIS ACTION CANNOT BE UNDONE.\n\n"
 kdialog --title "Confirm Delete Permanently" --yes-label "Delete Permanently" --no-label "Cancel" --warningyesno "$warning_message" 1>/dev/null 2>&1; kdialog_return_value=$?
+echo kdialog return value: $kdialog_return_value >&2
+# exit
 
 # TODO: we might fail here on insufficient user rights. we shall either inform on that failure or offer to do with sudo ..
 
-test $kdialog_return_value -eq 0 && command rm -rf "${mount_point}/.Trash-${user_id}"/files/*; rm_return_value=$?; if $rm_return_value -eq 0; then command rm -rf "${mount_point}/.Trash-${user_id}"/info/*; else kdialog --error "Could not delete following files:\n\n$(ls -1d "${mount_point}/.Trash-${user_id}"/files/*)\n\n(probably due to insufficient rights)"; fi
-
+if test $kdialog_return_value -eq 0; then
+	command rm -rf "${mount_point}/.Trash-${user_id}"/files/*;
+	rm_return_value=$?;
+	if test $rm_return_value -eq 0; then
+		command rm -rf "${mount_point}/.Trash-${user_id}"/info/*;
+	else
+		kdialog --error "Could not delete following files:\n\n$(ls -1d "${mount_point}/.Trash-${user_id}"/files/*)\n\n(probably due to insufficient rights)";
+	fi;
+fi;
