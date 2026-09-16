@@ -68,15 +68,21 @@ udisksctl_out=($(command udisksctl info --block-device $block_device | grep "IdL
 unset udisksctl_out[0]
 block_device_label="${udisksctl_out[@]}"
 
-files_count=$(cd "${mount_point}/.Trash-${user_id}/info/"; command ls -1 * | command wc -l)
+files_count=$(cd "${mount_point}/.Trash-${user_id}/info/"; command ls -1 * 2>/dev/null | command wc -l)
 #sorry_message="It seems as if there are no files or directories to delete in the Trash on: ${block_device_label}${spacer}"
 sorry_message="Can not find any files or directories to delete in the Trash on:  ${block_device_label}${spacer}"
 test $files_count -eq 0 && kdialog --title "No File(s) to Delete" --ok-label "Dismiss" --sorry "$sorry_message" 1>/dev/null 2>&1 && exit 1
 
-warning_message="Delete following $files_count file(s) permanently from trash on: ${block_device_label}?${spacer}\n\n${separator}\n$(collect_pathes "${mount_point}/.Trash-${user_id}")\n${separator}\n\nTHIS ACTION CANNOT BE UNDONE.\n\n"
-kdialog --title "Confirm Delete Permanently" --yes-label "Delete Permanently" --no-label "Cancel" --warningyesno "$warning_message" 1>/dev/null 2>&1; kdialog_return_value=$?
-echo kdialog return value: $kdialog_return_value >&2
-# exit
+# warning_message="Delete following $files_count file(s) permanently from trash on: ${block_device_label}?${spacer}\n\n${separator}\n$(collect_pathes "${mount_point}/.Trash-${user_id}")\n${separator}\n\nTHIS ACTION CANNOT BE UNDONE.\n\n"
+# kdialog --title "Confirm Delete Permanently" --yes-label "Delete Permanently" --no-label "Cancel" --warningyesno "$warning_message" 1>/dev/null 2>&1; kdialog_return_value=$?
+
+# new with --textbox option (that require a file as 'input'). TODO: how to add a cancel button?
+# see: https://develop.kde.org/docs/administration/kdialog/
+temp_file=$(mktemp);
+warning_message=$(echo -e "Realy delete $files_count file(s) permanently from trash on: ${block_device_label}?${spacer}\n\n$(collect_pathes "${mount_point}/.Trash-${user_id}")\n\nTHIS ACTION CANNOT BE UNDONE.\n\n" > $temp_file);
+kdialog --title "Confirm Permanently Delete" --yes-label "Delete Permanently" --no-label "Cancel" --textbox "$temp_file"  512 256 1>/dev/null 2>&1; kdialog_return_value=$?;
+rm $temp_file;
+
 
 # TODO: we might fail here on insufficient user rights. we shall either inform on that failure or offer to do with sudo ..
 
